@@ -1,4 +1,4 @@
-package com.camunda.process.engine.persistencia;
+package com.camunda.process.engine.dto;
 
 public enum TipoProducto {
     CONCRETO, POLIMERICO

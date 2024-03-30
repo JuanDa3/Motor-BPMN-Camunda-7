@@ -1,4 +1,4 @@
-package com.camunda.process.engine.persistencia;
+package com.camunda.process.engine.dto;
 
 import lombok.*;
 
@@ -13,4 +13,5 @@ public class ProductoNoConforme {
     private double cantidad;
     private String tipo;
     private String causa;
+    private Produccion produccion;
 }

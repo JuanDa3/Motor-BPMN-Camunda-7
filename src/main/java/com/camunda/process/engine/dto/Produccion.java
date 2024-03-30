@@ -1,4 +1,4 @@
-package com.camunda.process.engine.persistencia;
+package com.camunda.process.engine.dto;
 
 import lombok.*;
 
@@ -21,10 +21,14 @@ public class Produccion {
 
     private int totalMezcla;
 
-    private int totalProduccion;
-
     private double productividad;
 
-    private List<MateriaPrima>materiaPrimas = new ArrayList<>();
+    private int cantidadProductos;
+
+    private int sobranteMezcla;
+
+    private List<MateriaPrima>listaDeMateriasPrimas = new ArrayList<>();
+
+    private List<ProductoNoConforme> listaProductosNoConformes;
 
 }

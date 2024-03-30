@@ -1,8 +1,6 @@
-package com.camunda.process.engine.persistencia;
+package com.camunda.process.engine.dto;
 
 import lombok.*;
-
-import java.util.Date;
 
 @Getter
 @Setter
@@ -11,11 +9,9 @@ import java.util.Date;
 @Builder
 public class Bitacora {
 
-    private String fecha;
-
     private int consecutivo;
 
-    private LineaProducto lineaProducto;
+    private String fecha;
 
     private Maquina maquina;
 

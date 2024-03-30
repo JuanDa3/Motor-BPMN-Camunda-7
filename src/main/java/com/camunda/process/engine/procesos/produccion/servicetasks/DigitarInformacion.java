@@ -70,7 +70,7 @@ public class DigitarInformacion implements TaskListener {
             crearCeldaConEstilo(sheet, 2, 9, responsable, style);
             crearCeldaConEstilo(sheet, 2, 0, fecha, style);
             crearCeldaConEstilo(sheet, 2, 5, producto, style);
-            //TODO traer el saldo inicial de la base de datos
+            crearCeldaConEstilo(sheet, 29, 5, producto, style);
 
             // Escribir los cambios en el archivo Excel
             try (FileOutputStream outFile = new FileOutputStream(new File(rutaArchivo))) {
@@ -97,26 +97,4 @@ public class DigitarInformacion implements TaskListener {
         cell.setCellStyle(style);
     }
 
-//    private void obtenerInformacion(){
-//        try {
-//            HttpResponse<String>response = get("http://localhost:8081/api/produccion/control-cemento/saldo");
-//            System.out.println(response);
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-
-    public HttpResponse<String> get(String uri) throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .build();
-
-        HttpResponse<String> response =
-                client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        System.out.println(response.body());
-
-        return response;
-    }
 }

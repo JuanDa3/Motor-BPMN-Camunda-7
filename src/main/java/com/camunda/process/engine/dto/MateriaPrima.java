@@ -1,4 +1,4 @@
-package com.camunda.process.engine.persistencia;
+package com.camunda.process.engine.dto;
 
 import lombok.*;
 
@@ -7,7 +7,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Empleado {
+public class MateriaPrima {
 
     private String nombre;
+
+    private int cantidad;
 }

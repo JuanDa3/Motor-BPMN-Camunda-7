@@ -1,4 +1,4 @@
-package com.camunda.process.engine.persistencia;
+package com.camunda.process.engine.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,9 +7,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
-public class Maquina {
-
-    private String nombre;
+@NoArgsConstructor
+public class SaldoCementoDTO {
+    private int saldo;
 }
