@@ -24,4 +24,13 @@ public class Utils {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return localDateTime.format(formatter);
     }
+
+    public static Date cambiarDeStringADate(String fechaString){
+        try {
+            SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
+            return formato.parse(fechaString);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

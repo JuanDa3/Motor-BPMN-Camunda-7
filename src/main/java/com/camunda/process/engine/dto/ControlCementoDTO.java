@@ -11,10 +11,10 @@ import java.util.Date;
 @Builder
 public class ControlCementoDTO {
 
-    private int saldo;
-    private int entradaKilos;
+    private double saldo;
+    private double entradaKilos;
     private Date fechaEntradaKilos;
-    private int salidaKilos;
+    private double salidaKilos;
     private Date fechaSalidaKilos;
     private Produccion produccion;
 }
