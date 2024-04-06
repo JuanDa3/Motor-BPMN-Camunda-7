@@ -7,15 +7,18 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Bitacora {
+@ToString
+public class BitacoraDTO {
 
     private int consecutivo;
 
     private String fecha;
 
-    private Maquina maquina;
+    private MaquinaDTO maquinaDTO;
 
-    private Empleado responsable;
+    private EmpleadoDTO empleadoDTO;
 
-    private Producto producto;
+    private Boolean esPrincipal;
+
+    private ProductoDTO productoDTO;
 }

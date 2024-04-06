@@ -12,5 +12,5 @@ public class PruebaDTO {
     private int numero_cocha;
     private String resultado;
     private Produccion produccion;
-    private Empleado empleado;
+    private EmpleadoDTO empleadoDTO;
 }

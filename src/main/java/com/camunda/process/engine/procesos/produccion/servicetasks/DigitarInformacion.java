@@ -37,7 +37,7 @@ public class DigitarInformacion implements TaskListener {
         responsable = delegateTask.getVariable("responsable").toString();
         tipo = delegateTask.getVariable("tipoBitacora").toString();
         try {
-            fecha = cambiarFormatoFechaCamunda(delegateTask.getVariable("fecha").toString());
+            fecha = String.valueOf(cambiarFormatoFechaCamunda(delegateTask.getVariable("fecha").toString()));
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }
@@ -70,7 +70,7 @@ public class DigitarInformacion implements TaskListener {
             crearCeldaConEstilo(sheet, 2, 9, responsable, style);
             crearCeldaConEstilo(sheet, 2, 0, fecha, style);
             crearCeldaConEstilo(sheet, 2, 5, producto, style);
-            crearCeldaConEstilo(sheet, 29, 5, producto, style);
+            crearCeldaConEstilo(sheet, 29, 6, producto, style);
 
             // Escribir los cambios en el archivo Excel
             try (FileOutputStream outFile = new FileOutputStream(new File(rutaArchivo))) {

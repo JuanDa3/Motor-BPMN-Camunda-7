@@ -35,13 +35,13 @@ public class CargaDatosProceso {
 
     private String responsable;
 
-    private String productoFabricado;
+    private String nombre;
     public void leerInformacionExcel() throws IOException {
         FileInputStream inputStream = new FileInputStream(new File(rutaArchivo));
         Workbook workbook = new XSSFWorkbook(inputStream);
         Sheet sheet = workbook.getSheetAt(0);
 
-        Bitacora datosBitacora = obtenerDatosBitacora(sheet);
+        BitacoraDTO datosBitacora = obtenerDatosBitacora(sheet);
         Produccion datosProduccion = obtenerDatosProduccion(sheet, datosBitacora);
         List<ProductoNoConforme> listaProductoNoConforme = crearProductoNoConforme(sheet, datosProduccion);
         ArrayList<ProveedorDTO> listaProveedores = obtenerDatosProveedor(sheet);
@@ -58,7 +58,7 @@ public class CargaDatosProceso {
 
     }
 
-    private LecturaContadorAguaDTO obtenerLecturaContador(Sheet sheet, Produccion datosProduccion) {
+    public LecturaContadorAguaDTO obtenerLecturaContador(Sheet sheet, Produccion datosProduccion) {
 
         int lecturaIncial = convertirValorCeldaAInt(obtenerValorCelda(sheet,CELDA_CONTADOR_AGUA_LECTURA_INICIAL));
         int lecturaFinal = convertirValorCeldaAInt(obtenerValorCelda(sheet,CELDA_CONTADOR_AGUA_LECTURA_FINAL));
@@ -70,7 +70,7 @@ public class CargaDatosProceso {
                 .build();
     }
 
-    private List<RegistroContableDTO> obtenerRegistrosContables(Sheet sheet, Produccion datosProduccion) {
+    public List<RegistroContableDTO> obtenerRegistrosContables(Sheet sheet, Produccion datosProduccion) {
         List<RegistroContableDTO> listaRegistrosContables = new ArrayList<>();
 
         for (int i = 37; i <= 39; i++) {
@@ -90,7 +90,7 @@ public class CargaDatosProceso {
 
 
 
-    private ArrayList<ProveedorDTO> obtenerDatosProveedor(Sheet sheet) {
+    public ArrayList<ProveedorDTO> obtenerDatosProveedor(Sheet sheet) {
         ArrayList<ProveedorDTO> listaProveedores = new ArrayList<>();
         ArrayList<String> listaProductosProveedores = new ArrayList<>();
 
@@ -137,7 +137,7 @@ public class CargaDatosProceso {
     }
 
 
-    private Bitacora obtenerDatosBitacora(Sheet sheet) {
+    public BitacoraDTO obtenerDatosBitacora(Sheet sheet) {
 
         String linea = (String) obtenerValorCelda(sheet, CELDA_LINEA);
 
@@ -145,30 +145,30 @@ public class CargaDatosProceso {
         validarDatosObligatorios(consecutivo, "consecutivo de la Bitacora");
         validarDatosObligatorios(fecha, "Fecha de la Bitacota");
 
-        Maquina maquina = getMaquina(sheet);
-        Empleado responsable = getEmpleado();
-        Producto producto = getProducto(sheet);
+        MaquinaDTO maquinaDTO = getMaquina(sheet);
+        EmpleadoDTO empleadoDTO = getEmpleado();
+        ProductoDTO productoDTO = getProducto(sheet);
 
-        return Bitacora.builder()
+        return BitacoraDTO.builder()
                 .consecutivo(consecutivo)
                 .fecha(fecha)
-                .maquina(maquina)
-                .responsable(responsable)
-                .producto(producto)
+                .maquinaDTO(maquinaDTO)
+                .empleadoDTO(empleadoDTO)
+                .productoDTO(productoDTO)
                 .build();
     }
 
-    private Produccion obtenerDatosProduccion(Sheet sheet, Bitacora datosBitacora) {
+    public Produccion obtenerDatosProduccion(Sheet sheet, BitacoraDTO datosBitacora) {
         Object valorCeldaHoraInicioJornada = obtenerValorCelda(sheet, CELDA_HORA_INICIO_JORNADA);
         Object valorCeldaHoraFinJornada = obtenerValorCelda(sheet, CELDA_HORA_FIN_JORNADA);
-        Object valorCeldaCantidadProductos = obtenerValorCelda(sheet, CELDA_CANTIDAD_PRODUCTOS);
-        Object valorCeldaSobranteMezcla = obtenerValorCelda(sheet, CELDA_SOBRANTE_MEZCLA);
+        Double valorCeldaCantidadProductos = (Double) obtenerValorCelda(sheet, CELDA_CANTIDAD_PRODUCTOS);
+        Double valorCeldaSobranteMezcla = (Double) obtenerValorCelda(sheet, CELDA_SOBRANTE_MEZCLA);
 
         validarDatosObligatorios(valorCeldaHoraInicioJornada, "Hora Inicio Jornada");
         validarDatosObligatorios(valorCeldaHoraFinJornada, "Hora Fin Jornada");
         validarDatosObligatorios(valorCeldaCantidadProductos, "Cantidad Productos Fabricados");
 
-        int cantidadProductos = (int) valorCeldaCantidadProductos;
+        int cantidadProductos = valorCeldaCantidadProductos.intValue();
         int sobranteMezcla = 0;
 
         // Validación de la cantidad de productos
@@ -177,7 +177,7 @@ public class CargaDatosProceso {
         }
 
         if(valorCeldaSobranteMezcla != null){
-            sobranteMezcla = (int)valorCeldaSobranteMezcla;
+            sobranteMezcla = valorCeldaSobranteMezcla.intValue();
         }
 
         LocalTime horaInicio = convertirHoraExcelToLocalTime((Double) valorCeldaHoraInicioJornada);
@@ -196,19 +196,19 @@ public class CargaDatosProceso {
                     .build();
 
     }
-    private Maquina getMaquina(Sheet sheet) {
+    public MaquinaDTO getMaquina(Sheet sheet) {
         Object valorCelda = obtenerValorCelda(sheet, CELDA_MAQUINA);
 
         validarDatosObligatorios(valorCelda, "Nombre Maquina");
 
         String nombreMaquina = (String) valorCelda;
 
-        return new Maquina(nombreMaquina);
+        return new MaquinaDTO(nombreMaquina);
     }
-    private Empleado getEmpleado() {
-        return new Empleado(responsable);
+    private EmpleadoDTO getEmpleado() {
+        return new EmpleadoDTO(responsable);
     }
-    private Producto getProducto(Sheet sheet) {
+    private ProductoDTO getProducto(Sheet sheet) {
         Object valorCeldaReferencia = obtenerValorCelda(sheet, CELDA_REFERENCIA);
         Object valorCeldaComplemento = obtenerValorCelda(sheet, CELDA_COMPLEMENTO);
         Object valorCeldaRefP1 = obtenerValorCelda(sheet, CELDA_REFERENCIA_P1);
@@ -219,7 +219,7 @@ public class CargaDatosProceso {
         validarDatosObligatorios(valorCeldaReferencia, "Referencia del producto");
         validarDatosObligatorios(valorCeldaLinea, "Linea del producto");
 
-        String referencia = (String)valorCeldaReferencia;
+        String referencia = valorCeldaReferencia.toString();
         String linea = (String) valorCeldaLinea;
 
         if(valorCeldaComplemento != null){
@@ -232,11 +232,11 @@ public class CargaDatosProceso {
 
         int pesoProducto = calcularPesoProducto(sheet);
 
-        return Producto.builder()
+        return ProductoDTO.builder()
                 .referencia(referencia)
                 .referenciaP1(refp1)
                 .complemento(complemento)
-                .nombre(productoFabricado)
+                .nombre(nombre)
                 .peso(pesoProducto)
                 .linea(linea)
                 .build();
@@ -277,7 +277,7 @@ public class CargaDatosProceso {
         }
     }
 
-    private int calcularPesoProducto(Sheet sheet) {
+    public int calcularPesoProducto(Sheet sheet) {
         int totalMezcla = (int) calcularTotalMezcla(sheet);
 
         Double totalProduccionObj = (Double) obtenerValorCelda(sheet, CELDA_TOTAL_MEZCLA);
@@ -288,7 +288,7 @@ public class CargaDatosProceso {
 
         return totalMezcla / totalProduccion;
     }
-    private double calcularTotalMezcla(Sheet sheet) {
+    public double calcularTotalMezcla(Sheet sheet) {
         Object totalArenaFina = obtenerValorCelda(sheet, CELDA_TOTAL_ARENA_FINA);
         Object totalArenaGruesa = obtenerValorCelda(sheet, CELDA_TOTAL_ARENA_GRUESA);
         Object totalTriturado = obtenerValorCelda(sheet, CELDA_TOTAL_TRITURADO);
@@ -372,7 +372,7 @@ public class CargaDatosProceso {
         return materiaPrimaList;
     }
 
-    private List<ProductoNoConforme> crearProductoNoConforme(Sheet sheet, Produccion produccion){
+    public List<ProductoNoConforme> crearProductoNoConforme(Sheet sheet, Produccion produccion){
         List<ProductoNoConforme> listaProductoNoConforme = new ArrayList<>();
 
         for (int i = 8; i <= 25; i++){
@@ -409,7 +409,7 @@ public class CargaDatosProceso {
     private String obtenerCausaNC(Sheet sheet, int index){
         return (String) obtenerValorCelda(sheet, CELDA_CAUSA_PNC + index);
     }
-    private ControlCementoDTO controlCemento(Sheet sheet, Produccion produccion) {
+    public ControlCementoDTO controlCemento(Sheet sheet, Produccion produccion) {
         double saldoInicialKilos = SaldoCementoUtil.obtenerSaldo();
 
         double entradasDelDia42K = convertirValoresCeldaADouble(obtenerValorCelda(sheet, CELDA_CONTROL_DE_CEMENTO_ENTRADAS_DIA_42K),CELDA_CONTROL_DE_CEMENTO_ENTRADAS_DIA_42K);
@@ -451,7 +451,7 @@ public class CargaDatosProceso {
                 .build();
     }
 
-    private PruebaDTO obtenerDatosPrueba(Sheet sheet, Produccion produccion){
+    public PruebaDTO obtenerDatosPrueba(Sheet sheet, Produccion produccion){
 
         Object valorCeldaNumeroCilindro = obtenerValorCelda(sheet, CELDA_PRUEBAS_CILINDROS_NUMERO);
         Object valorCeldaNumeroCochaCilindro = obtenerValorCelda(sheet, CELDA_PRUEBAS_CILINDROS_NUMERO_COCHA);
@@ -461,18 +461,18 @@ public class CargaDatosProceso {
         validarDatosObligatorios(valorCeldaNumeroCochaCilindro, "Numero de cocha Cilindros");
         validarDatosObligatorios(valorCeldaResponsableCilindro, "Responsable Cilindros");
 
-        Empleado empleadoResponsableCilindro = new Empleado((String) obtenerValorCelda(sheet,CELDA_PRUEBAS_CILINDROS_RESPONSABLE));
+        EmpleadoDTO empleadoDTOResponsableCilindro = new EmpleadoDTO((String) obtenerValorCelda(sheet,CELDA_PRUEBAS_CILINDROS_RESPONSABLE));
 
         return PruebaDTO.builder()
                 .numero((int) valorCeldaNumeroCilindro)
                 .numero_cocha((int) valorCeldaNumeroCochaCilindro)
                 .resultado(null)
                 .produccion(produccion)
-                .empleado(empleadoResponsableCilindro)
+                .empleadoDTO(empleadoDTOResponsableCilindro)
                 .build();
     }
 
-    private TrasladoMezclaDTO obtenerDatosTrasladoMezcla(Sheet sheet, Produccion produccion){
+    public TrasladoMezclaDTO obtenerDatosTrasladoMezcla(Sheet sheet, Produccion produccion){
         Object valorCeldaTrasladoDeMaquina = obtenerValorCelda(sheet, CELDA_TRASLADO_MEZCLA_DE_MAQUINA_1);
         Object valorCeldaTrasladoAMaquina = obtenerValorCelda(sheet, CELDA_TRASLADO_MEZCLA_A_MAQUINA_1);
         Object valorCeldaTrasladoKilos = obtenerValorCelda(sheet, CELDA_TRASLADO_MEZCLA_KILOS_1);
@@ -490,7 +490,7 @@ public class CargaDatosProceso {
 
     }
 
-    private List<TiempoParadaMaquinaDTO> obtenerTiemposParadaMaquina(Sheet sheet, Produccion produccion){
+    public List<TiempoParadaMaquinaDTO> obtenerTiemposParadaMaquina(Sheet sheet, Produccion produccion){
         List<TiempoParadaMaquinaDTO>listaTiemposParadaMaquina = new ArrayList<>();
         for(int i = 30; i <= 35; i++){
             Object tipoTiempoParadaMaquina = obtenerValorCelda(sheet,CELDA_TIEMPOS_PARADA_MAQUINA_TIPO+i);

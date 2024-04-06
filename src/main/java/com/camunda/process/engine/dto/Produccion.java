@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 public class Produccion {
 
-    private Bitacora bitacora;
+    private BitacoraDTO bitacora;
 
     private LocalTime horaInicio;
 

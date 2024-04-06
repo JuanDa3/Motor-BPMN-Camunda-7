@@ -10,6 +10,8 @@ import java.net.http.HttpResponse;
 public class HttpUtil {
     private static final HttpClient httpClient = HttpClient.newHttpClient();
 
+    private static final String DIRECCION_PERSISTENCIA = "http://localhost:8081/api/produccion/";
+
     public static HttpResponse<String> get(String uri) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(uri))
@@ -19,9 +21,15 @@ public class HttpUtil {
     }
 
     public static HttpResponse<String> post(String uri, Object body) throws Exception {
+
+        Gson gson = new Gson();
+        String jsonBody = gson.toJson(body);
+        System.out.println("jsonBody: " + jsonBody);
+
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(body)))
+                .uri(URI.create(DIRECCION_PERSISTENCIA+uri))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());

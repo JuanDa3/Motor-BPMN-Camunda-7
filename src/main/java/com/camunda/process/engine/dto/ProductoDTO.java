@@ -7,7 +7,8 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Producto {
+@ToString
+public class ProductoDTO {
 
     private String nombre;
     private String referencia;
