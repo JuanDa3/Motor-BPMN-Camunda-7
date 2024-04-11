@@ -7,9 +7,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class TrasladoMezclaDTO {
-    private String deMaqunina;
-    private String aMaqunina;
+    private String deMaquina;
+    private String aMaquina;
     private int cantidadKilos;
-    private Produccion produccion;
+    private ProduccionDTO produccionDTO;
 }

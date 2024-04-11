@@ -16,5 +16,5 @@ public class ControlCementoDTO {
     private Date fechaEntradaKilos;
     private double salidaKilos;
     private Date fechaSalidaKilos;
-    private Produccion produccion;
+    private ProduccionDTO produccionDTO;
 }

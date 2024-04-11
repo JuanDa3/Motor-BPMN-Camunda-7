@@ -11,24 +11,23 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Produccion {
+@ToString
+public class ProduccionDTO {
 
     private BitacoraDTO bitacora;
 
-    private LocalTime horaInicio;
+    private String horaInicio;
 
-    private LocalTime horaFin;
+    private String horaFin;
 
     private int totalMezcla;
-
-    private double productividad;
 
     private int cantidadProductos;
 
     private int sobranteMezcla;
 
-    private List<MateriaPrima>listaDeMateriasPrimas = new ArrayList<>();
+    private List<MateriaPrimaDTO>listaDeMateriasPrimas = new ArrayList<>();
 
-    private List<ProductoNoConforme> listaProductosNoConformes;
+    private List<ProductoNoConformeDTO> listaProductosNoConformes;
 
 }

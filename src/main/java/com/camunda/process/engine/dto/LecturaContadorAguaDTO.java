@@ -10,5 +10,5 @@ import lombok.*;
 public class LecturaContadorAguaDTO {
     private int lecturaIncial;
     private int lecturafinal;
-    private Produccion produccion;
+    private ProduccionDTO produccionDTO;
 }

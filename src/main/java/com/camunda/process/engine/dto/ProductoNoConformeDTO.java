@@ -7,11 +7,12 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ProductoNoConforme {
+@ToString
+public class ProductoNoConformeDTO {
 
     private int numBitacora;
     private double cantidad;
     private String tipo;
     private String causa;
-    private Produccion produccion;
+    private ProduccionDTO produccionDTO;
 }

@@ -14,7 +14,6 @@ import org.camunda.bpm.engine.delegate.BpmnError;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -42,23 +41,23 @@ public class CargaDatosProceso {
         Sheet sheet = workbook.getSheetAt(0);
 
         BitacoraDTO datosBitacora = obtenerDatosBitacora(sheet);
-        Produccion datosProduccion = obtenerDatosProduccion(sheet, datosBitacora);
-        List<ProductoNoConforme> listaProductoNoConforme = crearProductoNoConforme(sheet, datosProduccion);
+        ProduccionDTO datosProduccionDTO = obtenerDatosProduccion(sheet, datosBitacora);
+        List<ProductoNoConformeDTO> listaProductoNoConformeDTO = crearProductoNoConforme(sheet, datosProduccionDTO);
         ArrayList<ProveedorDTO> listaProveedores = obtenerDatosProveedor(sheet);
-        ControlCementoDTO controlCementoDTO = controlCemento(sheet, datosProduccion);
-        PruebaDTO pruebaDTO = obtenerDatosPrueba(sheet, datosProduccion);
-        TrasladoMezclaDTO trasladoMezclaDTO = obtenerDatosTrasladoMezcla(sheet, datosProduccion);
-        List<TiempoParadaMaquinaDTO> listaTiemposParadaMaquina = obtenerTiemposParadaMaquina(sheet, datosProduccion);
-        List<RegistroContableDTO>listaRegistrosContables = obtenerRegistrosContables(sheet, datosProduccion);
-        LecturaContadorAguaDTO lecturaContadorAguaDTO = obtenerLecturaContador(sheet, datosProduccion);
+        ControlCementoDTO controlCementoDTO = controlCemento(sheet, datosProduccionDTO);
+        PruebaDTO pruebaDTO = obtenerDatosPrueba(sheet, datosProduccionDTO);
+        TrasladoMezclaDTO trasladoMezclaDTO = obtenerDatosTrasladoMezcla(sheet, datosProduccionDTO);
+        List<TiempoParadaMaquinaDTO> listaTiemposParadaMaquina = obtenerTiemposParadaMaquina(sheet, datosProduccionDTO);
+        List<RegistroContableDTO>listaRegistrosContables = obtenerRegistrosContables(sheet, datosProduccionDTO);
+        LecturaContadorAguaDTO lecturaContadorAguaDTO = obtenerLecturaContador(sheet, datosProduccionDTO);
 
-        if(!listaProductoNoConforme.isEmpty()){
-            datosProduccion.setListaProductosNoConformes(listaProductoNoConforme);
+        if(!listaProductoNoConformeDTO.isEmpty()){
+            datosProduccionDTO.setListaProductosNoConformes(listaProductoNoConformeDTO);
         }
 
     }
 
-    public LecturaContadorAguaDTO obtenerLecturaContador(Sheet sheet, Produccion datosProduccion) {
+    public LecturaContadorAguaDTO obtenerLecturaContador(Sheet sheet, ProduccionDTO datosProduccionDTO) {
 
         int lecturaIncial = convertirValorCeldaAInt(obtenerValorCelda(sheet,CELDA_CONTADOR_AGUA_LECTURA_INICIAL));
         int lecturaFinal = convertirValorCeldaAInt(obtenerValorCelda(sheet,CELDA_CONTADOR_AGUA_LECTURA_FINAL));
@@ -66,11 +65,11 @@ public class CargaDatosProceso {
         return LecturaContadorAguaDTO.builder()
                 .lecturaIncial(lecturaIncial)
                 .lecturafinal(lecturaFinal)
-                .produccion(datosProduccion)
+                .produccionDTO(datosProduccionDTO)
                 .build();
     }
 
-    public List<RegistroContableDTO> obtenerRegistrosContables(Sheet sheet, Produccion datosProduccion) {
+    public List<RegistroContableDTO> obtenerRegistrosContables(Sheet sheet, ProduccionDTO datosProduccionDTO) {
         List<RegistroContableDTO> listaRegistrosContables = new ArrayList<>();
 
         for (int i = 37; i <= 39; i++) {
@@ -80,7 +79,7 @@ public class CargaDatosProceso {
                 int numeroRegistro = (int) valorCelda;
                 RegistroContableDTO registroContableDTO = RegistroContableDTO.builder()
                         .numero(numeroRegistro)
-                        .produccion(datosProduccion)
+                        .produccionDTO(datosProduccionDTO)
                         .build();
                 listaRegistrosContables.add(registroContableDTO);
             }
@@ -158,16 +157,15 @@ public class CargaDatosProceso {
                 .build();
     }
 
-    public Produccion obtenerDatosProduccion(Sheet sheet, BitacoraDTO datosBitacora) {
-        Object valorCeldaHoraInicioJornada = obtenerValorCelda(sheet, CELDA_HORA_INICIO_JORNADA);
-        Object valorCeldaHoraFinJornada = obtenerValorCelda(sheet, CELDA_HORA_FIN_JORNADA);
+    public ProduccionDTO obtenerDatosProduccion(Sheet sheet, BitacoraDTO datosBitacora) {
+        Double valorCeldaHoraInicioJornada = (Double)obtenerValorCelda(sheet, CELDA_HORA_INICIO_JORNADA);
+        Double valorCeldaHoraFinJornada = (Double)obtenerValorCelda(sheet, CELDA_HORA_FIN_JORNADA);
         Double valorCeldaCantidadProductos = (Double) obtenerValorCelda(sheet, CELDA_CANTIDAD_PRODUCTOS);
         Double valorCeldaSobranteMezcla = (Double) obtenerValorCelda(sheet, CELDA_SOBRANTE_MEZCLA);
 
         validarDatosObligatorios(valorCeldaHoraInicioJornada, "Hora Inicio Jornada");
         validarDatosObligatorios(valorCeldaHoraFinJornada, "Hora Fin Jornada");
         validarDatosObligatorios(valorCeldaCantidadProductos, "Cantidad Productos Fabricados");
-
         int cantidadProductos = valorCeldaCantidadProductos.intValue();
         int sobranteMezcla = 0;
 
@@ -180,21 +178,26 @@ public class CargaDatosProceso {
             sobranteMezcla = valorCeldaSobranteMezcla.intValue();
         }
 
-        LocalTime horaInicio = convertirHoraExcelToLocalTime((Double) valorCeldaHoraInicioJornada);
-        LocalTime horaFin = convertirHoraExcelToLocalTime((Double) valorCeldaHoraFinJornada);
-        double productividad = cantidadProductos/calcularDiferenciaTiempoEnMinutos(horaInicio,horaFin);
+        String horaInicio = convertirHoraFormatoExcel(valorCeldaHoraInicioJornada);
+        String horaFin =  convertirHoraFormatoExcel(valorCeldaHoraFinJornada);
 
-        return Produccion.builder()
+        return ProduccionDTO.builder()
                     .bitacora(datosBitacora)
                     .horaInicio(horaInicio)
                     .horaFin(horaFin)
                     .totalMezcla((int)calcularTotalMezcla(sheet))
-                    .productividad(productividad)
                     .cantidadProductos(cantidadProductos)
                     .sobranteMezcla(sobranteMezcla)
                     .listaDeMateriasPrimas(obtenerValoresMateriasPrimas(sheet))
                     .build();
 
+    }
+
+    public String convertirHoraFormatoExcel(Double horaFormatoExcel){
+        double horas = (horaFormatoExcel * 24);
+        double minutos = (horaFormatoExcel*24 - horas) * 60;
+
+        return String.format("%02d:%02d:00", (int)horas, (int)minutos);
     }
     public MaquinaDTO getMaquina(Sheet sheet) {
         Object valorCelda = obtenerValorCelda(sheet, CELDA_MAQUINA);
@@ -315,17 +318,8 @@ public class CargaDatosProceso {
 
         return LocalTime.of(horas, minutos);
     }
-
-    public static double calcularDiferenciaTiempoEnMinutos(LocalTime horaInicio, LocalTime horaFin) {
-        // Calcular la diferencia de tiempo entre la hora de inicio y la hora de fin
-        Duration diferencia = Duration.between(horaInicio, horaFin);
-
-        // Convertir la diferencia de tiempo a minutos como un double
-        return (double) diferencia.toMinutes()/60;
-    }
-
-    private List<MateriaPrima> obtenerValoresMateriasPrimas(Sheet sheet) {
-        List<MateriaPrima> materiaPrimaList = new ArrayList<>();
+    private List<MateriaPrimaDTO> obtenerValoresMateriasPrimas(Sheet sheet) {
+        List<MateriaPrimaDTO> materiaPrimaDTOList = new ArrayList<>();
         Map<String, String> mensajesError = new HashMap<>();
 
         Map<String, String> nombresMateriasPrimas = Map.of(
@@ -346,18 +340,18 @@ public class CargaDatosProceso {
             Object totalMateriaPrima = obtenerValorCelda(sheet, celda);
             if (totalMateriaPrima != null && !celda.equals(ACELERANTE)) {
                 Double valorMateriaPrima = (Double) totalMateriaPrima;
-                MateriaPrima materiaPrima = MateriaPrima.builder()
+                MateriaPrimaDTO materiaPrimaDTO = MateriaPrimaDTO.builder()
                         .nombre(nombreMateriaPrima)
                         .cantidad(valorMateriaPrima.intValue())
                         .build();
-                materiaPrimaList.add(materiaPrima);
+                materiaPrimaDTOList.add(materiaPrimaDTO);
             } else if(totalMateriaPrima != null){
                 Double valorMateriaPrima = (Double) totalMateriaPrima;
-                MateriaPrima materiaPrima = MateriaPrima.builder()
+                MateriaPrimaDTO materiaPrimaDTO = MateriaPrimaDTO.builder()
                         .nombre(nombreMateriaPrima)
                         .cantidad(valorMateriaPrima.intValue())
                         .build();
-                materiaPrimaList.add(materiaPrima);
+                materiaPrimaDTOList.add(materiaPrimaDTO);
             }else {
                 mensajesError.put(nombreMateriaPrima, "complete los valores de " + nombreMateriaPrima);
             }
@@ -369,11 +363,11 @@ public class CargaDatosProceso {
             throw new BpmnError(mensajesError.values().iterator().next());
         }
 
-        return materiaPrimaList;
+        return materiaPrimaDTOList;
     }
 
-    public List<ProductoNoConforme> crearProductoNoConforme(Sheet sheet, Produccion produccion){
-        List<ProductoNoConforme> listaProductoNoConforme = new ArrayList<>();
+    public List<ProductoNoConformeDTO> crearProductoNoConforme(Sheet sheet, ProduccionDTO produccionDTO){
+        List<ProductoNoConformeDTO> listaProductoNoConformeDTO = new ArrayList<>();
 
         for (int i = 8; i <= 25; i++){
             String direccionCeldaCantidad = CELDA_CANTIDAD_PNC + i;
@@ -388,18 +382,18 @@ public class CargaDatosProceso {
                     validarDatosObligatorios(tipoNC, "Tipo NC");
                     validarDatosObligatorios(causaNC, "Causa NC");
 
-                    ProductoNoConforme productoNoConforme = new ProductoNoConforme();
-                    productoNoConforme.setNumBitacora(consecutivo);
-                    productoNoConforme.setCantidad(cantidad);
-                    productoNoConforme.setTipo(tipoNC);
-                    productoNoConforme.setCausa(causaNC);
-                    productoNoConforme.setProduccion(produccion);
-                    listaProductoNoConforme.add(productoNoConforme);
+                    ProductoNoConformeDTO productoNoConformeDTO = new ProductoNoConformeDTO();
+                    productoNoConformeDTO.setNumBitacora(consecutivo);
+                    productoNoConformeDTO.setCantidad(cantidad);
+                    productoNoConformeDTO.setTipo(tipoNC);
+                    productoNoConformeDTO.setCausa(causaNC);
+                    productoNoConformeDTO.setProduccionDTO(produccionDTO);
+                    listaProductoNoConformeDTO.add(productoNoConformeDTO);
                 }
             }
         }
 
-        return listaProductoNoConforme;
+        return listaProductoNoConformeDTO;
     }
 
     private String obtenerTipoNC(Sheet sheet, int index){
@@ -409,7 +403,7 @@ public class CargaDatosProceso {
     private String obtenerCausaNC(Sheet sheet, int index){
         return (String) obtenerValorCelda(sheet, CELDA_CAUSA_PNC + index);
     }
-    public ControlCementoDTO controlCemento(Sheet sheet, Produccion produccion) {
+    public ControlCementoDTO controlCemento(Sheet sheet, ProduccionDTO produccionDTO) {
         double saldoInicialKilos = SaldoCementoUtil.obtenerSaldo();
 
         double entradasDelDia42K = convertirValoresCeldaADouble(obtenerValorCelda(sheet, CELDA_CONTROL_DE_CEMENTO_ENTRADAS_DIA_42K),CELDA_CONTROL_DE_CEMENTO_ENTRADAS_DIA_42K);
@@ -447,11 +441,11 @@ public class CargaDatosProceso {
                 .fechaEntradaKilos(fechaEntradaKilos)
                 .salidaKilos(salidaKilos)
                 .fechaSalidaKilos(cambiarDeStringADate(fecha))
-                .produccion(produccion)
+                .produccionDTO(produccionDTO)
                 .build();
     }
 
-    public PruebaDTO obtenerDatosPrueba(Sheet sheet, Produccion produccion){
+    public PruebaDTO obtenerDatosPrueba(Sheet sheet, ProduccionDTO produccionDTO){
 
         Object valorCeldaNumeroCilindro = obtenerValorCelda(sheet, CELDA_PRUEBAS_CILINDROS_NUMERO);
         Object valorCeldaNumeroCochaCilindro = obtenerValorCelda(sheet, CELDA_PRUEBAS_CILINDROS_NUMERO_COCHA);
@@ -467,30 +461,29 @@ public class CargaDatosProceso {
                 .numero((int) valorCeldaNumeroCilindro)
                 .numero_cocha((int) valorCeldaNumeroCochaCilindro)
                 .resultado(null)
-                .produccion(produccion)
+                .produccionDTO(produccionDTO)
                 .empleadoDTO(empleadoDTOResponsableCilindro)
                 .build();
     }
 
-    public TrasladoMezclaDTO obtenerDatosTrasladoMezcla(Sheet sheet, Produccion produccion){
+    public TrasladoMezclaDTO obtenerDatosTrasladoMezcla(Sheet sheet, ProduccionDTO produccionDTO){
+        Double valorCeldaTrasladoKilos = (Double) obtenerValorCelda(sheet, CELDA_TRASLADO_MEZCLA_KILOS);
         Object valorCeldaTrasladoDeMaquina = obtenerValorCelda(sheet, CELDA_TRASLADO_MEZCLA_DE_MAQUINA_1);
         Object valorCeldaTrasladoAMaquina = obtenerValorCelda(sheet, CELDA_TRASLADO_MEZCLA_A_MAQUINA_1);
-        Object valorCeldaTrasladoKilos = obtenerValorCelda(sheet, CELDA_TRASLADO_MEZCLA_KILOS_1);
-
-        validarDatosObligatorios(valorCeldaTrasladoDeMaquina, "De Maquina");
-        validarDatosObligatorios(valorCeldaTrasladoAMaquina, "A Maquina");
-        validarDatosObligatorios(valorCeldaTrasladoKilos, "Kilos");
-
-        return TrasladoMezclaDTO.builder()
-                .deMaqunina((String) valorCeldaTrasladoDeMaquina)
-                .aMaqunina((String) valorCeldaTrasladoAMaquina)
-                .cantidadKilos((int) valorCeldaTrasladoKilos)
-                .produccion(produccion)
-                .build();
-
+        if(valorCeldaTrasladoKilos > 0 && valorCeldaTrasladoDeMaquina != null){
+            validarDatosObligatorios(valorCeldaTrasladoDeMaquina, "De Maquina");
+            validarDatosObligatorios(valorCeldaTrasladoAMaquina, "A Maquina");
+            return TrasladoMezclaDTO.builder()
+                    .deMaquina((String) valorCeldaTrasladoDeMaquina)
+                    .aMaquina((String) valorCeldaTrasladoAMaquina)
+                    .cantidadKilos(valorCeldaTrasladoKilos.intValue())
+                    .produccionDTO(produccionDTO)
+                    .build();
+        }
+        return null;
     }
 
-    public List<TiempoParadaMaquinaDTO> obtenerTiemposParadaMaquina(Sheet sheet, Produccion produccion){
+    public List<TiempoParadaMaquinaDTO> obtenerTiemposParadaMaquina(Sheet sheet, ProduccionDTO produccionDTO){
         List<TiempoParadaMaquinaDTO>listaTiemposParadaMaquina = new ArrayList<>();
         for(int i = 30; i <= 35; i++){
             Object tipoTiempoParadaMaquina = obtenerValorCelda(sheet,CELDA_TIEMPOS_PARADA_MAQUINA_TIPO+i);
@@ -500,7 +493,7 @@ public class CargaDatosProceso {
                 TiempoParadaMaquinaDTO tiempoParadaMaquinaDTO = TiempoParadaMaquinaDTO.builder()
                         .tipo((int) tipoTiempoParadaMaquina)
                         .minutos((int)minutosTiempoParadaMaquina)
-                        .produccion(produccion)
+                        .produccionDTO(produccionDTO)
                         .build();
                 listaTiemposParadaMaquina.add(tiempoParadaMaquinaDTO);
             }

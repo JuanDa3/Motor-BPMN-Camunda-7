@@ -10,5 +10,5 @@ import lombok.*;
 public class TiempoParadaMaquinaDTO {
     private int tipo;
     private int minutos;
-    private Produccion produccion;
+    private ProduccionDTO produccionDTO;
 }

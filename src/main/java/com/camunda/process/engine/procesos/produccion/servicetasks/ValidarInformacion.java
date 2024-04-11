@@ -1,8 +1,8 @@
 package com.camunda.process.engine.procesos.produccion.servicetasks;
 
 import com.camunda.process.engine.dto.BitacoraDTO;
-import com.camunda.process.engine.dto.LineaProducto;
-import com.camunda.process.engine.dto.Produccion;
+import com.camunda.process.engine.dto.ProduccionDTO;
+import com.camunda.process.engine.dto.TrasladoMezclaDTO;
 import com.camunda.process.engine.util.HttpUtil;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -11,9 +11,7 @@ import org.camunda.bpm.engine.delegate.BpmnError;
 import org.camunda.bpm.engine.delegate.DelegateExecution;
 import org.camunda.bpm.engine.delegate.JavaDelegate;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.http.HttpResponse;
 
@@ -33,8 +31,6 @@ public class ValidarInformacion implements JavaDelegate {
 
     private CargaDatosProceso cargaDatosProceso;
 
-    private BitacoraDTO bitacoraDTO;
-    private Produccion produccion;
     @Override
     public void execute(DelegateExecution delegateExecution) throws Exception {
         productoFabricado = (String) delegateExecution.getVariable("productoFabricado");
@@ -45,7 +41,6 @@ public class ValidarInformacion implements JavaDelegate {
         leerDatosExcel();
         cargaDatosProceso = new CargaDatosProceso(consecutivo, fecha,responsable,productoFabricado);
         enviarDatosPersistencia();
-        produccion = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
         delegateExecution.setVariable("isValid", false);
     }
 
@@ -57,6 +52,20 @@ public class ValidarInformacion implements JavaDelegate {
 
     private void enviarDatosPersistencia(){
         enviarDatosBitacora();
+        enviarDatosProduccion();
+        enviarDatosTrasladoMezcla();
+        enviarDatosLecturaContadorAgua();
+    }
+
+    private void enviarDatosLecturaContadorAgua() {
+        try {
+            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
+            ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
+            Object body = cargaDatosProceso.obtenerLecturaContador(sheet, produccionDTO);
+            HttpResponse<String>response = HttpUtil.post("lectura-contador", body);
+        } catch (Exception e) {
+            throw new BpmnError(e.getMessage());
+        }
     }
 
     private void enviarDatosBitacora() {
@@ -65,6 +74,27 @@ public class ValidarInformacion implements JavaDelegate {
             HttpResponse<String>response = HttpUtil.post("bitacora", body);
         } catch (Exception e) {
             throw new BpmnError(e.getMessage());
+        }
+    }
+
+    private void enviarDatosProduccion(){
+        try {
+            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
+            Object body = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
+            HttpResponse<String>response = HttpUtil.post("produccion", body);
+        } catch (Exception e) {
+            throw new BpmnError(e.getMessage());
+        }
+    }
+
+    private void enviarDatosTrasladoMezcla(){
+        try {
+            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
+            ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
+            Object body = cargaDatosProceso.obtenerDatosTrasladoMezcla(sheet, produccionDTO);
+            HttpResponse<String>response = HttpUtil.post("traslado-mezcla", body);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

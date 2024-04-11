@@ -9,5 +9,5 @@ import lombok.*;
 @Builder
 public class RegistroContableDTO {
     private int numero;
-    private Produccion produccion;
+    private ProduccionDTO produccionDTO;
 }

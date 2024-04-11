@@ -71,7 +71,7 @@ public class Constantes {
     public static final String CELDA_PRUEBAS_CILINDROS_RESPONSABLE = "I33";
     public static final String CELDA_TRASLADO_MEZCLA_DE_MAQUINA_1 = "H36";
     public static final String CELDA_TRASLADO_MEZCLA_A_MAQUINA_1 = "I36";
-    public static final String CELDA_TRASLADO_MEZCLA_KILOS_1 = "I37";
+    public static final String CELDA_TRASLADO_MEZCLA_KILOS = "I37";
     public static final String CELDA_TIEMPOS_PARADA_MAQUINA_TIPO = "J";
     public static final String CELDA_TIEMPOS_PARADA_MAQUINA_MINUTOS = "K";
     public static final String CELDA_CEMENTO_PULIR_KILOS = "L30";
