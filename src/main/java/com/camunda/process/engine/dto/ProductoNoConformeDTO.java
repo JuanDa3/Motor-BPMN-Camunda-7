@@ -14,5 +14,4 @@ public class ProductoNoConformeDTO {
     private double cantidad;
     private String tipo;
     private String causa;
-    private ProduccionDTO produccionDTO;
 }

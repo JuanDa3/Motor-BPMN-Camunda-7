@@ -7,10 +7,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class PruebaDTO {
     private int numero;
     private int numero_cocha;
-    private String resultado;
-    private ProduccionDTO produccionDTO;
-    private EmpleadoDTO empleadoDTO;
+    private int consecutivoBitacora;
+    private String nombreResponsable;
 }

@@ -7,8 +7,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class TiempoParadaMaquinaDTO {
     private int tipo;
     private int minutos;
-    private ProduccionDTO produccionDTO;
+    private int consecutivoBitacora;
 }

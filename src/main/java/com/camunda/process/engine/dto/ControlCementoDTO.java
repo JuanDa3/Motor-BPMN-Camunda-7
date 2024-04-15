@@ -9,12 +9,13 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString
 public class ControlCementoDTO {
 
     private double saldo;
     private double entradaKilos;
-    private Date fechaEntradaKilos;
+    private String fechaEntradaKilos;
     private double salidaKilos;
-    private Date fechaSalidaKilos;
+    private String fechaSalidaKilos;
     private ProduccionDTO produccionDTO;
 }

@@ -29,9 +29,9 @@ public class Constantes {
     public static final String CELDA_TOTAL_AGUA = "I26";
     public static final String CELDA_TOTAL_ADITIVO = "J26";
     public static final String CELDA_TOTAL_MEZCLA = "M26";
-    public static final String CELDA_CANTIDAD_PNC = "N";
-    public static final String CELDA_TIPO_PNC = "O";
-    public static final String CELDA_CAUSA_PNC = "P";
+    public static final String CELDA_CANTIDAD_PNC = "M";
+    public static final String CELDA_TIPO_PNC = "N";
+    public static final String CELDA_CAUSA_PNC = "O";
     public static final String CELDA_PROVEEDOR_ARENA_FINA = "B29";
     public static final String CELDA_PROVEEDOR_ARENA_GRUESA = "B30";
     public static final String CELDA_PROVEEDOR_TRITURADO = "B31";

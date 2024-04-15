@@ -2,7 +2,6 @@ package com.camunda.process.engine.procesos.produccion.servicetasks;
 
 import com.camunda.process.engine.dto.BitacoraDTO;
 import com.camunda.process.engine.dto.ProduccionDTO;
-import com.camunda.process.engine.dto.TrasladoMezclaDTO;
 import com.camunda.process.engine.util.HttpUtil;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -20,7 +19,7 @@ import static com.camunda.process.engine.util.Utils.rutaArchivo;
 
 
 public class ValidarInformacion implements JavaDelegate {
-    private  int  consecutivo;
+    private int consecutivo;
     private String fecha;
 
     private String responsable;
@@ -39,7 +38,7 @@ public class ValidarInformacion implements JavaDelegate {
         fecha = String.valueOf(cambiarFormatoFechaCamunda(delegateExecution.getVariable("fecha").toString()));
         responsable = delegateExecution.getVariable("responsable").toString();
         leerDatosExcel();
-        cargaDatosProceso = new CargaDatosProceso(consecutivo, fecha,responsable,productoFabricado);
+        cargaDatosProceso = new CargaDatosProceso(consecutivo, fecha, responsable, productoFabricado);
         enviarDatosPersistencia();
         delegateExecution.setVariable("isValid", false);
     }
@@ -50,11 +49,50 @@ public class ValidarInformacion implements JavaDelegate {
         sheet = workbook.getSheetAt(0);
     }
 
-    private void enviarDatosPersistencia(){
+    private void enviarDatosPersistencia() {
         enviarDatosBitacora();
         enviarDatosProduccion();
         enviarDatosTrasladoMezcla();
         enviarDatosLecturaContadorAgua();
+        enviarDatosControlCemento();
+        enviarDatosTiemposParadaMaquina();
+        enviarDatosProductoNoConforme();
+        enviarDatosPruebasCilindros();
+    }
+
+    private void enviarDatosPruebasCilindros() {
+        try{
+            Object body = cargaDatosProceso.obtenerDatosPrueba(sheet);
+            if (body != null) {
+                HttpResponse<String> response = HttpUtil.post("prueba-cilindro", body);
+            }
+        }catch (Exception e){
+            throw new BpmnError("GenericError",e.getMessage());
+        }
+    }
+
+    private void enviarDatosProductoNoConforme() {
+        try{
+            Object body = cargaDatosProceso.obtenerProductosNoConformes(sheet);
+            if (body != null) {
+                HttpResponse<String> response = HttpUtil.post("producto-no-conforme", body);
+            }
+        }catch (Exception e){
+            throw new BpmnError("GenericError",e.getMessage());
+        }
+    }
+
+    private void enviarDatosTiemposParadaMaquina() {
+        try{
+            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
+            ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
+            Object body = cargaDatosProceso.obtenerTiemposParadaMaquina(sheet);
+            if (body != null) {
+                HttpResponse<String> response = HttpUtil.post("tiempos-parada-maquina", body);
+            }
+        }catch (Exception e){
+            throw new BpmnError("GenericError",e.getMessage());
+        }
     }
 
     private void enviarDatosLecturaContadorAgua() {
@@ -62,39 +100,53 @@ public class ValidarInformacion implements JavaDelegate {
             BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
             ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
             Object body = cargaDatosProceso.obtenerLecturaContador(sheet, produccionDTO);
-            HttpResponse<String>response = HttpUtil.post("lectura-contador", body);
+            if (body != null) {
+                HttpResponse<String> response = HttpUtil.post("lectura-contador", body);
+            }
         } catch (Exception e) {
-            throw new BpmnError(e.getMessage());
+            throw new BpmnError("GenericError",e.getMessage());
         }
     }
 
     private void enviarDatosBitacora() {
         try {
             Object body = cargaDatosProceso.obtenerDatosBitacora(sheet);
-            HttpResponse<String>response = HttpUtil.post("bitacora", body);
+            HttpResponse<String> response = HttpUtil.post("bitacora", body);
         } catch (Exception e) {
-            throw new BpmnError(e.getMessage());
+            throw new BpmnError("GenericError",e.getMessage());
         }
     }
 
-    private void enviarDatosProduccion(){
+    private void enviarDatosProduccion() {
         try {
             BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
             Object body = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
-            HttpResponse<String>response = HttpUtil.post("produccion", body);
+            HttpResponse<String> response = HttpUtil.post("produccion", body);
         } catch (Exception e) {
-            throw new BpmnError(e.getMessage());
+            throw new BpmnError("GenericError",e.getMessage());
         }
     }
 
-    private void enviarDatosTrasladoMezcla(){
+    private void enviarDatosTrasladoMezcla() {
         try {
             BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
             ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
             Object body = cargaDatosProceso.obtenerDatosTrasladoMezcla(sheet, produccionDTO);
-            HttpResponse<String>response = HttpUtil.post("traslado-mezcla", body);
+            HttpResponse<String> response = HttpUtil.post("traslado-mezcla", body);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new BpmnError("GenericError",e.getMessage());
+        }
+    }
+
+    private void enviarDatosControlCemento() {
+        try {
+            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
+            ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
+            Object body = cargaDatosProceso.obtenerDatosControlCemento(sheet, produccionDTO);
+            System.out.println(body);
+            HttpResponse<String> response = HttpUtil.post("control-cemento", body);
+        } catch (Exception e) {
+            throw new BpmnError("GenericError",e.getMessage());
         }
     }
 
