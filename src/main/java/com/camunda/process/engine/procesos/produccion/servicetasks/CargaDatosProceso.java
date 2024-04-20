@@ -6,19 +6,16 @@ import lombok.*;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellAddress;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.camunda.bpm.engine.delegate.BpmnError;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.camunda.process.engine.util.Constantes.*;
-import static com.camunda.process.engine.util.Utils.rutaArchivo;
+import static com.camunda.process.engine.util.Utils.mensajeError;
 
 @Getter
 @Setter
@@ -35,28 +32,6 @@ public class CargaDatosProceso {
 
     private String nombre;
 
-    public void leerInformacionExcel() throws IOException {
-        FileInputStream inputStream = new FileInputStream(new File(rutaArchivo));
-        Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0);
-
-        BitacoraDTO datosBitacora = obtenerDatosBitacora(sheet);
-        ProduccionDTO datosProduccionDTO = obtenerDatosProduccion(sheet, datosBitacora);
-        List<ProductoNoConformeDTO> listaProductoNoConformeDTO = obtenerProductosNoConformes(sheet);
-        ArrayList<ProveedorDTO> listaProveedores = obtenerDatosProveedor(sheet);
-        ControlCementoDTO controlCementoDTO = obtenerDatosControlCemento(sheet, datosProduccionDTO);
-        PruebaDTO pruebaDTO = obtenerDatosPrueba(sheet);
-        TrasladoMezclaDTO trasladoMezclaDTO = obtenerDatosTrasladoMezcla(sheet, datosProduccionDTO);
-        List<TiempoParadaMaquinaDTO> listaTiemposParadaMaquina = obtenerTiemposParadaMaquina(sheet);
-        List<RegistroContableDTO> listaRegistrosContables = obtenerRegistrosContables(sheet, datosProduccionDTO);
-        LecturaContadorAguaDTO lecturaContadorAguaDTO = obtenerLecturaContador(sheet, datosProduccionDTO);
-
-        if (!listaProductoNoConformeDTO.isEmpty()) {
-            datosProduccionDTO.setListaProductosNoConformes(listaProductoNoConformeDTO);
-        }
-
-    }
-
     public LecturaContadorAguaDTO obtenerLecturaContador(Sheet sheet, ProduccionDTO datosProduccionDTO) {
 
         int lecturaIncial = convertirValorCeldaAInt(obtenerValorCelda(sheet, CELDA_CONTADOR_AGUA_LECTURA_INICIAL));
@@ -70,72 +45,6 @@ public class CargaDatosProceso {
         }
         return null;
     }
-
-    public List<RegistroContableDTO> obtenerRegistrosContables(Sheet sheet, ProduccionDTO datosProduccionDTO) {
-        List<RegistroContableDTO> listaRegistrosContables = new ArrayList<>();
-
-        for (int i = 37; i <= 39; i++) {
-            String celdaRegistroContable = "K" + i;
-            Object valorCelda = obtenerValorCelda(sheet, celdaRegistroContable);
-            if (valorCelda != null) {
-                int numeroRegistro = (int) valorCelda;
-                RegistroContableDTO registroContableDTO = RegistroContableDTO.builder()
-                        .numero(numeroRegistro)
-                        .produccionDTO(datosProduccionDTO)
-                        .build();
-                listaRegistrosContables.add(registroContableDTO);
-            }
-        }
-        return listaRegistrosContables;
-    }
-
-
-    public ArrayList<ProveedorDTO> obtenerDatosProveedor(Sheet sheet) {
-        ArrayList<ProveedorDTO> listaProveedores = new ArrayList<>();
-        ArrayList<String> listaProductosProveedores = new ArrayList<>();
-
-        // Mapeo de celdas de proveedores a sus respectivos lotes
-        Map<String, String> proveedorLoteMap = new HashMap<>();
-        proveedorLoteMap.put(CELDA_PROVEEDOR_ARENA_FINA, CELDA_LOTE_ARENA_FINA);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_ARENA_GRUESA, CELDA_LOTE_ARENA_GRUESA);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_TRITURADO, CELDA_LOTE_TRITURADO);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_CEMENTO, CELDA_LOTE_CEMENTO);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_M50, CELDA_LOTE_M50);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_M20, CELDA_LOTE_M20);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_ADITIVO, CELDA_LOTE_ADITIVO);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_HIERRO, CELDA_LOTE_HIERRO);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_OTRO_1, CELDA_LOTE_OTRO_1);
-        proveedorLoteMap.put(CELDA_PROVEEDOR_OTRO_2, CELDA_LOTE_OTRO_2);
-        // Nombre de los productos
-        listaProductosProveedores.add(ARENA_FINA);
-        listaProductosProveedores.add(ARENA_GRUESA);
-        listaProductosProveedores.add(TRITURADO);
-        listaProductosProveedores.add(CEMENTO);
-        listaProductosProveedores.add(ADITIVO);
-        listaProductosProveedores.add(HIERRO);
-        listaProductosProveedores.add(OTRO_1);
-        listaProductosProveedores.add(OTRO_2);
-
-        List<String> keys = new ArrayList<>(proveedorLoteMap.keySet());
-        List<String> values = new ArrayList<>(proveedorLoteMap.values());
-
-        for (int i = 0; i < proveedorLoteMap.size(); i++) {
-            String proveedor = (String) obtenerValorCelda(sheet, keys.get(i));
-            String lote = (String) obtenerValorCelda(sheet, values.get(i));
-
-            if (proveedor != null && lote != null) {
-                ProveedorDTO proveedorDTO = ProveedorDTO.builder()
-                        .nombre(proveedor)
-                        .producto(listaProductosProveedores.get(i))
-                        .lote(lote)
-                        .build();
-                listaProveedores.add(proveedorDTO);
-            }
-        }
-
-        return listaProveedores;
-    }
-
 
     public BitacoraDTO obtenerDatosBitacora(Sheet sheet) {
 
@@ -172,7 +81,7 @@ public class CargaDatosProceso {
 
         // Validación de la cantidad de productos
         if (cantidadProductos <= 0) {
-            throw new IllegalArgumentException("La cantidad de productos fabricados debe ser un número positivo");
+            throw new BpmnError("Error de Negocio", "La cantidad de productos fabricados debe ser un número positivo");
         }
 
         if (valorCeldaSobranteMezcla != null) {
@@ -280,7 +189,8 @@ public class CargaDatosProceso {
 
     private void validarDatosObligatorios(Object dato, String nombre) {
         if (dato == null) {
-            throw new BpmnError("GenericError","El siguiente campo no ha sido ingresado " + nombre);
+            mensajeError = "El siguiente campo no ha sido ingresado";
+            throw new BpmnError("Error de Negocio", "El siguiente campo no ha sido ingresado" + nombre);
         }
     }
 
@@ -289,7 +199,9 @@ public class CargaDatosProceso {
 
         Double totalProduccionObj = (Double) obtenerValorCelda(sheet, CELDA_TOTAL_MEZCLA);
         if (totalProduccionObj == null || totalProduccionObj == 0) {
-            throw new IllegalArgumentException("El total de producción es inválido o cero");
+            mensajeError = "El total de producción es inválido o cero";
+            throw new BpmnError("Error de Negocio", "El total de producción es inválido o cero");
+
         }
         int totalProduccion = totalProduccionObj.intValue();
 
@@ -310,19 +222,12 @@ public class CargaDatosProceso {
 
     private Double convertirValoresObligatoriosCeldaADouble(Object valor, String celda) {
         if (valor == null) {
-            throw new IllegalArgumentException("El valor de la celda " + celda + " no puede ser nulo");
+            throw new BpmnError("Error de Negocio", "El valor de la celda " + celda + " no puede ser nulo");
         }
         if (!(valor instanceof Double)) {
-            throw new IllegalArgumentException("El valor de la celda " + celda + " no es un número válido");
+            throw new BpmnError("Error de Negocio", "El valor de la celda " + celda + " no es un número válido");
         }
         return (Double) valor;
-    }
-
-    private LocalTime convertirHoraExcelToLocalTime(double valorHoraExcel) {
-        int horas = (int) valorHoraExcel;
-        int minutos = (int) ((valorHoraExcel - horas) * 60);
-
-        return LocalTime.of(horas, minutos);
     }
 
     private List<MateriaPrimaDTO> obtenerValoresMateriasPrimas(Sheet sheet) {
@@ -364,9 +269,9 @@ public class CargaDatosProceso {
             }
         }
 
-
         if (!mensajesError.isEmpty()) {
-            throw new BpmnError(mensajesError.values().iterator().next());
+            mensajeError = mensajesError.values().iterator().next();
+            throw new BpmnError("Error de Negocio", mensajesError.values().iterator().next());
         }
 
         return materiaPrimaDTOList;
@@ -453,7 +358,7 @@ public class CargaDatosProceso {
     public PruebaDTO obtenerDatosPrueba(Sheet sheet) {
 
         Double valorCeldaNumeroCilindro = (Double) obtenerValorCelda(sheet, CELDA_PRUEBAS_CILINDROS_NUMERO);
-        if(valorCeldaNumeroCilindro != null){
+        if (valorCeldaNumeroCilindro != null) {
             Double valorCeldaNumeroCochaCilindro = convertirValoresCeldaADouble(obtenerValorCelda(sheet, CELDA_PRUEBAS_CILINDROS_NUMERO_COCHA), CELDA_PRUEBAS_CILINDROS_NUMERO_COCHA);
             String valorCeldaResponsableCilindro = (String) obtenerValorCelda(sheet, CELDA_PRUEBAS_CILINDROS_RESPONSABLE);
 
@@ -467,7 +372,7 @@ public class CargaDatosProceso {
                     .build();
         }
 
-       return null;
+        return null;
     }
 
     public TrasladoMezclaDTO obtenerDatosTrasladoMezcla(Sheet sheet, ProduccionDTO produccionDTO) {
@@ -514,7 +419,7 @@ public class CargaDatosProceso {
             }
             return convertirValorCelda.intValue();
         } catch (NumberFormatException e) {
-            throw new BpmnError("GenericError", "Error al convertir el valor de la celda a entero: " + e.getMessage());
+            throw new BpmnError("Error de Negocio", "Error al convertir el valor de la celda a entero: " + e.getMessage());
         }
     }
 
@@ -523,7 +428,7 @@ public class CargaDatosProceso {
             return 0.0;
         }
         if (!(valor instanceof Double)) {
-            throw new IllegalArgumentException("Ingrese valores validos en la celda: " + celda);
+            throw new BpmnError("Error de Negocio", "Ingrese valores validos en la celda: " + celda);
         }
         return (Double) valor;
     }

@@ -1,7 +1,6 @@
 package com.camunda.process.engine.procesos.produccion.servicetasks;
 
-import com.camunda.process.engine.dto.BitacoraDTO;
-import com.camunda.process.engine.dto.ProduccionDTO;
+import com.camunda.process.engine.dto.*;
 import com.camunda.process.engine.util.HttpUtil;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -13,34 +12,33 @@ import org.camunda.bpm.engine.delegate.JavaDelegate;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.http.HttpResponse;
+import java.util.List;
 
-import static com.camunda.process.engine.util.Utils.cambiarFormatoFechaCamunda;
-import static com.camunda.process.engine.util.Utils.rutaArchivo;
+import static com.camunda.process.engine.util.Utils.*;
 
 
 public class ValidarInformacion implements JavaDelegate {
-    private int consecutivo;
-    private String fecha;
-
-    private String responsable;
-
     private Sheet sheet;
-
-    private String productoFabricado;
-
     private CargaDatosProceso cargaDatosProceso;
+    private boolean bandera = false;
 
     @Override
-    public void execute(DelegateExecution delegateExecution) throws Exception {
-        productoFabricado = (String) delegateExecution.getVariable("productoFabricado");
-        Long numFormatoCamunda = (Long) delegateExecution.getVariable("numFormato");
-        consecutivo = numFormatoCamunda.intValue();
-        fecha = String.valueOf(cambiarFormatoFechaCamunda(delegateExecution.getVariable("fecha").toString()));
-        responsable = delegateExecution.getVariable("responsable").toString();
-        leerDatosExcel();
-        cargaDatosProceso = new CargaDatosProceso(consecutivo, fecha, responsable, productoFabricado);
-        enviarDatosPersistencia();
-        delegateExecution.setVariable("isValid", false);
+    public void execute(DelegateExecution delegateExecution) {
+        try {
+            String productoFabricado = (String) delegateExecution.getVariable("productoFabricado");
+            Long numFormatoCamunda = (Long) delegateExecution.getVariable("numFormato");
+            int consecutivo = numFormatoCamunda.intValue();
+            String fecha = String.valueOf(cambiarFormatoFechaCamunda(delegateExecution.getVariable("fecha").toString()));
+            String responsable = delegateExecution.getVariable("responsable").toString();
+            leerDatosExcel();
+            cargaDatosProceso = new CargaDatosProceso(consecutivo, fecha, responsable, productoFabricado);
+            enviarDatosPersistencia();
+            delegateExecution.setVariable("ErrorMessage", mensajeError);
+            delegateExecution.setVariable("isValid", bandera);
+        } catch (Exception e) {
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
+        }
     }
 
     private void leerDatosExcel() throws IOException {
@@ -50,104 +48,99 @@ public class ValidarInformacion implements JavaDelegate {
     }
 
     private void enviarDatosPersistencia() {
-        enviarDatosBitacora();
-        enviarDatosProduccion();
-        enviarDatosTrasladoMezcla();
-        enviarDatosLecturaContadorAgua();
-        enviarDatosControlCemento();
-        enviarDatosTiemposParadaMaquina();
-        enviarDatosProductoNoConforme();
-        enviarDatosPruebasCilindros();
-    }
 
-    private void enviarDatosPruebasCilindros() {
-        try{
-            Object body = cargaDatosProceso.obtenerDatosPrueba(sheet);
-            if (body != null) {
-                HttpResponse<String> response = HttpUtil.post("prueba-cilindro", body);
-            }
-        }catch (Exception e){
-            throw new BpmnError("GenericError",e.getMessage());
-        }
-    }
-
-    private void enviarDatosProductoNoConforme() {
-        try{
-            Object body = cargaDatosProceso.obtenerProductosNoConformes(sheet);
-            if (body != null) {
-                HttpResponse<String> response = HttpUtil.post("producto-no-conforme", body);
-            }
-        }catch (Exception e){
-            throw new BpmnError("GenericError",e.getMessage());
-        }
-    }
-
-    private void enviarDatosTiemposParadaMaquina() {
-        try{
-            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
-            ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
-            Object body = cargaDatosProceso.obtenerTiemposParadaMaquina(sheet);
-            if (body != null) {
-                HttpResponse<String> response = HttpUtil.post("tiempos-parada-maquina", body);
-            }
-        }catch (Exception e){
-            throw new BpmnError("GenericError",e.getMessage());
-        }
-    }
-
-    private void enviarDatosLecturaContadorAgua() {
         try {
-            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
-            ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
-            Object body = cargaDatosProceso.obtenerLecturaContador(sheet, produccionDTO);
-            if (body != null) {
-                HttpResponse<String> response = HttpUtil.post("lectura-contador", body);
+            DatosPersistenciaDTO datosPersistenciaDTO = new DatosPersistenciaDTO();
+            BitacoraDTO bitacoraDTO = obtenerDatosBitacora();
+            ProduccionDTO produccionDTO = obtenerDatosProduccion(bitacoraDTO);
+
+            datosPersistenciaDTO.setBitacora(bitacoraDTO);
+            datosPersistenciaDTO.setProduccion(obtenerDatosProduccion(bitacoraDTO));
+            datosPersistenciaDTO.setTrasladoMezcla(obtenerDatosTrasladoMezcla(produccionDTO));
+            datosPersistenciaDTO.setLecturaContadorAgua(obtenerDatosLecturaContadorAgua(produccionDTO));
+            datosPersistenciaDTO.setControlCemento(enviarDatosControlCemento(produccionDTO));
+            datosPersistenciaDTO.setListaTiemposParadaMaquina(obtenerListaTiemposParadaMaquina());
+            datosPersistenciaDTO.setListaProductoNoConforme(enviarDatosProductoNoConforme());
+            datosPersistenciaDTO.setPrueba(enviarDatosPruebasCilindros());
+            HttpResponse<String> response = HttpUtil.post("persistencia", datosPersistenciaDTO);
+            if(response.statusCode() == 200 || response.statusCode() == 201){
+                bandera = true;
             }
         } catch (Exception e) {
-            throw new BpmnError("GenericError",e.getMessage());
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
         }
     }
 
-    private void enviarDatosBitacora() {
+    private PruebaDTO enviarDatosPruebasCilindros() {
         try {
-            Object body = cargaDatosProceso.obtenerDatosBitacora(sheet);
-            HttpResponse<String> response = HttpUtil.post("bitacora", body);
+            return cargaDatosProceso.obtenerDatosPrueba(sheet);
         } catch (Exception e) {
-            throw new BpmnError("GenericError",e.getMessage());
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
         }
     }
 
-    private void enviarDatosProduccion() {
+    private List<ProductoNoConformeDTO> enviarDatosProductoNoConforme() {
         try {
-            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
-            Object body = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
-            HttpResponse<String> response = HttpUtil.post("produccion", body);
+            return cargaDatosProceso.obtenerProductosNoConformes(sheet);
         } catch (Exception e) {
-            throw new BpmnError("GenericError",e.getMessage());
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
         }
     }
 
-    private void enviarDatosTrasladoMezcla() {
+    private List<TiempoParadaMaquinaDTO> obtenerListaTiemposParadaMaquina() {
         try {
-            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
-            ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
-            Object body = cargaDatosProceso.obtenerDatosTrasladoMezcla(sheet, produccionDTO);
-            HttpResponse<String> response = HttpUtil.post("traslado-mezcla", body);
+            return cargaDatosProceso.obtenerTiemposParadaMaquina(sheet);
         } catch (Exception e) {
-            throw new BpmnError("GenericError",e.getMessage());
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
         }
     }
 
-    private void enviarDatosControlCemento() {
+    private LecturaContadorAguaDTO obtenerDatosLecturaContadorAgua(ProduccionDTO produccionDTO) {
         try {
-            BitacoraDTO bitacoraDTO = cargaDatosProceso.obtenerDatosBitacora(sheet);
-            ProduccionDTO produccionDTO = cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
-            Object body = cargaDatosProceso.obtenerDatosControlCemento(sheet, produccionDTO);
-            System.out.println(body);
-            HttpResponse<String> response = HttpUtil.post("control-cemento", body);
+            return cargaDatosProceso.obtenerLecturaContador(sheet, produccionDTO);
         } catch (Exception e) {
-            throw new BpmnError("GenericError",e.getMessage());
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
         }
     }
 
+    private BitacoraDTO obtenerDatosBitacora() {
+        try {
+            return cargaDatosProceso.obtenerDatosBitacora(sheet);
+        } catch (Exception e) {
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
+        }
+    }
+
+    private ProduccionDTO obtenerDatosProduccion(BitacoraDTO bitacoraDTO) {
+        try {
+            return cargaDatosProceso.obtenerDatosProduccion(sheet, bitacoraDTO);
+        } catch (Exception e) {
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
+        }
+    }
+
+    private TrasladoMezclaDTO obtenerDatosTrasladoMezcla(ProduccionDTO produccionDTO) {
+        try {
+            return cargaDatosProceso.obtenerDatosTrasladoMezcla(sheet, produccionDTO);
+        } catch (Exception e) {
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
+        }
+    }
+
+    private ControlCementoDTO enviarDatosControlCemento(ProduccionDTO produccionDTO) {
+        try {
+            return cargaDatosProceso.obtenerDatosControlCemento(sheet, produccionDTO);
+        } catch (Exception e) {
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
+        }
+    }
 }

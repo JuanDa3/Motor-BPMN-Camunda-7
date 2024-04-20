@@ -5,13 +5,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 public class Utils {
 
+    public static String mensajeError = "";
     public static final String rutaProyecto = new File("").getAbsolutePath();
     public static final String rutaArchivo = rutaProyecto + "/src/main/java/templates/PlantillaConcreto.xlsx";
     public static LocalDate cambiarFormatoFechaCamunda(String fechaCamunda) throws ParseException {

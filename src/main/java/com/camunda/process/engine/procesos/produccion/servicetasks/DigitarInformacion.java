@@ -4,20 +4,14 @@ import lombok.Getter;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.usermodel.*;
+import org.camunda.bpm.engine.delegate.BpmnError;
 import org.camunda.bpm.engine.delegate.DelegateTask;
 import org.camunda.bpm.engine.delegate.TaskListener;
 
 import java.io.*;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.util.Date;
 
-import static com.camunda.process.engine.util.Utils.cambiarFormatoFechaCamunda;
-import static com.camunda.process.engine.util.Utils.rutaArchivo;
+import static com.camunda.process.engine.util.Utils.*;
 
 @Getter
 public class DigitarInformacion implements TaskListener {
@@ -32,13 +26,14 @@ public class DigitarInformacion implements TaskListener {
 
     @Override
     public void notify(DelegateTask delegateTask) {
-        //obtenerInformacion();
+        delegateTask.setVariable("ErrorMessage", mensajeError);
         numFormato = (Long) delegateTask.getVariable("numFormato");
         responsable = delegateTask.getVariable("responsable").toString();
         tipo = delegateTask.getVariable("tipoBitacora").toString();
         try {
             fecha = String.valueOf(cambiarFormatoFechaCamunda(delegateTask.getVariable("fecha").toString()));
         } catch (ParseException e) {
+            mensajeError = e.getMessage();
             throw new RuntimeException(e);
         }
         String producto = delegateTask.getVariable("productoFabricado").toString();
@@ -47,11 +42,12 @@ public class DigitarInformacion implements TaskListener {
         try {
             abrirExcel(numFormato,responsable,fecha, producto);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
         }
     }
     public void abrirExcel(Long numFormato, String responsable, String fecha, String producto) throws IOException {
-        try (FileInputStream file = new FileInputStream(new File(rutaArchivo))) {
+        try (FileInputStream file = new FileInputStream(rutaArchivo)) {
             XSSFWorkbook workbook = new XSSFWorkbook(file);
             XSSFSheet sheet = workbook.getSheetAt(0);
 
@@ -73,13 +69,12 @@ public class DigitarInformacion implements TaskListener {
             crearCeldaConEstilo(sheet, 29, 6, producto, style);
 
             // Escribir los cambios en el archivo Excel
-            try (FileOutputStream outFile = new FileOutputStream(new File(rutaArchivo))) {
+            try (FileOutputStream outFile = new FileOutputStream(rutaArchivo)) {
                 workbook.write(outFile);
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            mensajeError = e.getMessage();
+            throw new BpmnError("Error de Negocio", e.getMessage());
         }
     }
 
