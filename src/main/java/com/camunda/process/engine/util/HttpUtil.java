@@ -14,7 +14,8 @@ public class HttpUtil {
 
     public static HttpResponse<String> get(String uri) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
+                .uri(URI.create(DIRECCION_PERSISTENCIA+uri))
+                .header("Content-Type", "application/json")
                 .build();
 
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -24,8 +25,6 @@ public class HttpUtil {
 
         Gson gson = new Gson();
         String jsonBody = gson.toJson(body);
-        System.out.println("jsonBody: " + jsonBody);
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(DIRECCION_PERSISTENCIA+uri))
                 .header("Content-Type", "application/json")

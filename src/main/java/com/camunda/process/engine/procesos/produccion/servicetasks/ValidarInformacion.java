@@ -8,6 +8,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.camunda.bpm.engine.delegate.BpmnError;
 import org.camunda.bpm.engine.delegate.DelegateExecution;
 import org.camunda.bpm.engine.delegate.JavaDelegate;
+import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -16,7 +17,7 @@ import java.util.List;
 
 import static com.camunda.process.engine.util.Utils.*;
 
-
+@Service
 public class ValidarInformacion implements JavaDelegate {
     private Sheet sheet;
     private CargaDatosProceso cargaDatosProceso;
@@ -45,6 +46,8 @@ public class ValidarInformacion implements JavaDelegate {
         FileInputStream inputStream = new FileInputStream(rutaArchivo);
         Workbook workbook = new XSSFWorkbook(inputStream);
         sheet = workbook.getSheetAt(0);
+        inputStream.close();
+        workbook.close();
     }
 
     private void enviarDatosPersistencia() {
@@ -63,6 +66,7 @@ public class ValidarInformacion implements JavaDelegate {
             datosPersistenciaDTO.setListaProductoNoConforme(enviarDatosProductoNoConforme());
             datosPersistenciaDTO.setPrueba(enviarDatosPruebasCilindros());
             HttpResponse<String> response = HttpUtil.post("persistencia", datosPersistenciaDTO);
+
             if(response.statusCode() == 200 || response.statusCode() == 201){
                 bandera = true;
             }
@@ -113,6 +117,7 @@ public class ValidarInformacion implements JavaDelegate {
             return cargaDatosProceso.obtenerDatosBitacora(sheet);
         } catch (Exception e) {
             mensajeError = e.getMessage();
+            System.out.println("Entra a obtener Datos Bitacora " + e.getMessage());
             throw new BpmnError("Error de Negocio", e.getMessage());
         }
     }

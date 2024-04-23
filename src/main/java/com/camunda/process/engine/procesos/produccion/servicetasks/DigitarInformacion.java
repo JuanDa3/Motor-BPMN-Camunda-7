@@ -26,6 +26,7 @@ public class DigitarInformacion implements TaskListener {
 
     @Override
     public void notify(DelegateTask delegateTask) {
+        mensajeError = "";
         delegateTask.setVariable("ErrorMessage", mensajeError);
         numFormato = (Long) delegateTask.getVariable("numFormato");
         responsable = delegateTask.getVariable("responsable").toString();
@@ -34,7 +35,7 @@ public class DigitarInformacion implements TaskListener {
             fecha = String.valueOf(cambiarFormatoFechaCamunda(delegateTask.getVariable("fecha").toString()));
         } catch (ParseException e) {
             mensajeError = e.getMessage();
-            throw new RuntimeException(e);
+            throw new BpmnError("Error de Negocio", e.getMessage());
         }
         String producto = delegateTask.getVariable("productoFabricado").toString();
 
@@ -71,6 +72,8 @@ public class DigitarInformacion implements TaskListener {
             // Escribir los cambios en el archivo Excel
             try (FileOutputStream outFile = new FileOutputStream(rutaArchivo)) {
                 workbook.write(outFile);
+                workbook.close();
+                file.close();
             }
         } catch (IOException e) {
             mensajeError = e.getMessage();

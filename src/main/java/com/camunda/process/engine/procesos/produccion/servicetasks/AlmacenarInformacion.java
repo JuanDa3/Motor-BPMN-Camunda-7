@@ -6,6 +6,6 @@ import org.camunda.bpm.engine.delegate.JavaDelegate;
 public class AlmacenarInformacion implements JavaDelegate {
     @Override
     public void execute(DelegateExecution delegateExecution) throws Exception {
-        System.out.println("Entra a AlmacenarInformacion");
+
     }
 }

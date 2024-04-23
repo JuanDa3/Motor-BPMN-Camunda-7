@@ -7,7 +7,8 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString
 public class RegistroContableDTO {
     private int numero;
-    private ProduccionDTO produccionDTO;
+    private int bitacora;
 }
