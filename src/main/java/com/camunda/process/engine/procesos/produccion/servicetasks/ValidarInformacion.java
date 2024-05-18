@@ -65,6 +65,7 @@ public class ValidarInformacion implements JavaDelegate {
             datosPersistenciaDTO.setListaTiemposParadaMaquina(obtenerListaTiemposParadaMaquina());
             datosPersistenciaDTO.setListaProductoNoConforme(enviarDatosProductoNoConforme());
             datosPersistenciaDTO.setPrueba(enviarDatosPruebasCilindros());
+            System.out.println(datosPersistenciaDTO);
             HttpResponse<String> response = HttpUtil.post("persistencia", datosPersistenciaDTO);
 
             if(response.statusCode() == 200 || response.statusCode() == 201){

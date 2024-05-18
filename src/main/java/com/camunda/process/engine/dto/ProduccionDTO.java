@@ -2,7 +2,6 @@ package com.camunda.process.engine.dto;
 
 import lombok.*;
 
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +13,7 @@ import java.util.List;
 @ToString
 public class ProduccionDTO {
 
-    private BitacoraDTO bitacora;
+    private int numBitacora;
 
     private String horaInicio;
 
@@ -24,7 +23,9 @@ public class ProduccionDTO {
 
     private int cantidadProductos;
 
-    private int sobranteMezcla;
+    private int cementoPulir;
+
+    private int sobrante;
 
     private List<MateriaPrimaDTO>listaDeMateriasPrimas = new ArrayList<>();
 

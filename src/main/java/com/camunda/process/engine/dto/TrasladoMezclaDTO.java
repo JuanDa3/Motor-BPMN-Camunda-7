@@ -12,5 +12,5 @@ public class TrasladoMezclaDTO {
     private String deMaquina;
     private String aMaquina;
     private int cantidadKilos;
-    private ProduccionDTO produccionDTO;
+    private int numBitacora;
 }

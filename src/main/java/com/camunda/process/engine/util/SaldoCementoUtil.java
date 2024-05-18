@@ -9,7 +9,8 @@ public class SaldoCementoUtil {
 
     public static int obtenerSaldo() {
         try {
-            HttpResponse<String> response = HttpUtil.get("http://localhost:8081/api/produccion/control-cemento/saldo");
+            String URL = "control-cemento/saldo";
+            HttpResponse<String> response = HttpUtil.get(URL);
             if (response.statusCode() == 200) {
                 Gson gson = new Gson();
                 SaldoCementoDTO saldoCementoDTO = gson.fromJson(response.body(), SaldoCementoDTO.class);

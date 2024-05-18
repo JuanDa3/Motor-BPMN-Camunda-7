@@ -40,7 +40,7 @@ public class CargaDatosProceso {
             return LecturaContadorAguaDTO.builder()
                     .lecturaIncial(lecturaIncial)
                     .lecturafinal(lecturaFinal)
-                    .produccionDTO(datosProduccionDTO)
+                    .numBitacora(datosProduccionDTO.getNumBitacora())
                     .build();
         }
         return null;
@@ -72,6 +72,7 @@ public class CargaDatosProceso {
         Double valorCeldaHoraFinJornada = (Double) obtenerValorCelda(sheet, CELDA_HORA_FIN_JORNADA);
         Double valorCeldaCantidadProductos = (Double) obtenerValorCelda(sheet, CELDA_CANTIDAD_PRODUCTOS);
         Double valorCeldaSobranteMezcla = (Double) obtenerValorCelda(sheet, CELDA_SOBRANTE_MEZCLA);
+        Double valorCeldaCementoPulir = (Double) obtenerValorCelda(sheet, CELDA_CEMENTO_PULIR_KILOS);
 
         validarDatosObligatorios(valorCeldaHoraInicioJornada, "Hora Inicio Jornada");
         validarDatosObligatorios(valorCeldaHoraFinJornada, "Hora Fin Jornada");
@@ -88,16 +89,21 @@ public class CargaDatosProceso {
             sobranteMezcla = valorCeldaSobranteMezcla.intValue();
         }
 
+        if(valorCeldaCementoPulir == null){
+            valorCeldaCementoPulir = 0.0;
+        }
+
         String horaInicio = convertirHoraFormatoExcel(valorCeldaHoraInicioJornada);
         String horaFin = convertirHoraFormatoExcel(valorCeldaHoraFinJornada);
 
         return ProduccionDTO.builder()
-                .bitacora(datosBitacora)
+                .numBitacora(datosBitacora.getConsecutivo())
                 .horaInicio(horaInicio)
                 .horaFin(horaFin)
                 .totalMezcla((int) calcularTotalMezcla(sheet))
                 .cantidadProductos(cantidadProductos)
-                .sobranteMezcla(sobranteMezcla)
+                .cementoPulir(valorCeldaCementoPulir.intValue())
+                .sobrante(sobranteMezcla)
                 .listaDeMateriasPrimas(obtenerValoresMateriasPrimas(sheet))
                 .build();
 
@@ -351,7 +357,7 @@ public class CargaDatosProceso {
                 .fechaEntradaKilos(fechaEntradaKilos)
                 .salidaKilos(salidaKilos)
                 .fechaSalidaKilos(fecha)
-                .produccionDTO(produccionDTO)
+                .numBitacora(produccionDTO.getNumBitacora())
                 .build();
     }
 
@@ -386,7 +392,7 @@ public class CargaDatosProceso {
                     .deMaquina((String) valorCeldaTrasladoDeMaquina)
                     .aMaquina((String) valorCeldaTrasladoAMaquina)
                     .cantidadKilos(valorCeldaTrasladoKilos.intValue())
-                    .produccionDTO(produccionDTO)
+                    .numBitacora(produccionDTO.getNumBitacora())
                     .build();
         }
         return null;

@@ -17,5 +17,5 @@ public class ControlCementoDTO {
     private String fechaEntradaKilos;
     private double salidaKilos;
     private String fechaSalidaKilos;
-    private ProduccionDTO produccionDTO;
+    private int numBitacora;
 }

@@ -7,8 +7,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class LecturaContadorAguaDTO {
     private int lecturaIncial;
     private int lecturafinal;
-    private ProduccionDTO produccionDTO;
+    private int numBitacora;
 }
